@@ -20,11 +20,20 @@
 
 Este proyecto compara tres estrategias de control semafórico aplicadas a una intersección de la ciudad de Loja (Av. Isidro Ayora x 8 de Diciembre):
 
-1. **Tiempos Fijos (Baseline):** Controlador convencional con ciclos predefinidos de 120 segundos.
-2. **Q-Learning Tabular:** Agente de aprendizaje por refuerzo que discretiza el estado de tráfico en 288 estados y 12 acciones.
-3. **Deep Q-Network (DQN):** Agente de aprendizaje profundo que procesa el estado continuo mediante una red neuronal MLP [128, 128].
+1. **Tiempos Fijos (Baseline):** Controlador convencional con ciclo predefinido de 90 segundos (42 s de verde + 3 s de amarillo por fase).
+2. **Q-Learning Tabular:** Agente de aprendizaje por refuerzo que discretiza el estado de tráfico en 432 estados posibles y 12 acciones.
+3. **Deep Q-Network (DQN):** Agente de aprendizaje profundo que procesa las mismas cuatro variables de estado mediante una red neuronal MLP [128, 128].
 
-Los tres escenarios utilizan la misma demanda vehicular generada estocásticamente (distribución de Weibull, 2334 vehículos en 3600 segundos) y la misma función de recompensa multi-objetivo.
+La configuración actual usa una red de 300 m por arista y una demanda de Weibull de 2410 vehículos en 3600 segundos, con 1205 vehículos asignados a cada acceso. Los resultados guardados deben regenerarse si se modifica la red o la demanda.
+
+### Reentrenamiento y comparación
+
+1. Ejecutar `Simulaciones_tiempos_fijos/baseline.ipynb` para recalibrar los cortes de discretización.
+2. Ejecutar `Q-Learning/qlearning.ipynb`.
+3. Ejecutar `DQN/dqn.ipynb`.
+4. Ejecutar `Comparativa/comparacion_estrategias.ipynb`.
+
+El script de comparación genera cinco rutas con semillas 42--46, evalúa los tres controladores y guarda métricas, pruebas estadísticas y figuras en `Comparativa/resultados/`.
 
 ---
 
@@ -37,6 +46,15 @@ Tesis/
 │   ├── distribucion_weibull.ipynb       # Generación de demanda estocástica
 │   ├── validacion_entorno.ipynb         # Validación de archivos SUMO
 │   └── loja_intersection_weibull.rou.xml # Archivo de rutas generado
+├── Comparativa/
+│   ├── comparacion_estrategias.ipynb    # Evaluación 3 controladores × 5 semillas
+│   └── resultados/
+│       ├── metricas_por_semilla.csv
+│       ├── resumen.csv
+│       ├── pruebas.csv
+│       ├── figuras/
+│       ├── rutas/
+│       └── tripinfo/
 ├── Simulaciones_tiempos_fijos/
 │   ├── baseline.ipynb                   # Simulación de línea base
 │   └── resultados/
@@ -115,7 +133,7 @@ Este notebook procesa los conteos empíricos de vehículos realizados a partir d
 3. Clasificación por acceso (Norte vía -E5, Oeste vía -E4).
 4. Descarga del dataset de imágenes etiquetadas desde Roboflow (3 clases: car, moto, bus).
 
-**Resultado:** Distribución por tipo de vehículo: 74.1% car, 14.8% moto, 11.1% bus. Flujo promedio: 1166.9 veh/hora por acceso.
+**Resultado:** Distribución por tipo de vehículo: 69.58% ligeros (7032), 8.76% motos (885) y 21.66% pesados (2189), según las etiquetas de entrenamiento del dataset público de Roboflow. El flujo medio, calculado con los conteos manuales de la Tabla 13, es 1204.5 veh/h. Como los aforos corresponden a un acceso, la simulación asigna 1205 veh/h a cada uno de sus dos accesos.
 
 ### 4.2 Generación de Demanda Estocástica
 
@@ -131,7 +149,7 @@ $$\lambda(t) = \frac{k}{\lambda_{w}} \left( \frac{t}{\lambda_{w}} \right)^{k-1} 
 
 - k = 2.5 (forma): Controla la asimetría de la curva.
 - λ_w = 0.55 × 3600 (escala): Localiza el pico entre 20-30 minutos.
-- Total de vehículos: 2334.
+- Total de vehículos: 2410 (1205 por acceso).
 - Duración: 3600 segundos.
 - Seed: 42 (reproducibilidad).
 
@@ -147,6 +165,8 @@ $$\lambda(t) = \frac{k}{\lambda_{w}} \left( \frac{t}{\lambda_{w}} \right)^{k-1} 
 **Archivo:** `Distribuciones/validacion_entorno.ipynb`
 
 Ejecuta el simulador SUMO con los archivos generados y verifica:
+
+Los resultados almacenados en esta sección se obtuvieron con la demanda anterior de 2334 vehículos. Deben actualizarse ejecutando la validación con la demanda actual de 2410.
 
 - Ausencia de errores de conexión en la red.
 - Total de vehículos procesados: 2334.
@@ -164,13 +184,15 @@ Implementa el controlador semafórico convencional con ciclos fijos.
 
 ### 5.1 Configuración
 
-- **Ciclo:** 120 segundos (55 s verde + 5 s amarillo por fase).
+- **Ciclo:** 90 segundos (42 s verde + 3 s amarillo por fase).
 - **Fases:** Fase 0 (Norte-Sur), Fase 1 (Este-Oeste).
 - **API:** TraCI / libsumo.
 - **Archivo de red:** `Simple_Intersection.net.xml`.
 - **Archivo de rutas:** `loja_intersection_weibull.rou.xml`.
 
 ### 5.2 Resultados
+
+Los resultados siguientes corresponden a una ejecución anterior con 2334 vehículos; aún no representan la demanda actual de 2410.
 
 | Métrica | Valor |
 |---|---|
@@ -205,7 +227,7 @@ El wrapper `TrafficStateWrapper` (hereda de `gym.Wrapper`) discretiza el vector 
 - Fase actual: 4 niveles.
 - Duración acumulada de la fase: 3 niveles.
 
-**Total de estados:** 6 × 6 × 4 × 3 = 288 estados.
+**Total de estados:** 6 × 6 × 4 × 3 = 432 estados posibles.
 
 ### 6.2 Espacio de Acciones
 

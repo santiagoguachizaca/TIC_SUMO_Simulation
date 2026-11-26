@@ -1,13 +1,18 @@
 # Credenciales / secrets
-data/account.json
-data/auth.json
 .env
 **/.env
 
-# Python
+# Carpetas ocultas (cualquiera que empiece por .)
+.*/
+!.gitignore
+
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+.pytest_cache/
+*.egg-info/
 
 # Virtual environment
 .venv/
@@ -22,9 +27,24 @@ temp_respaldo\ q/
 # Configuracion personal de herramientas
 config/
 
+# Datos locales / credenciales (no subir)
+data/
+
+# Demo web separada (no parte del repo educacional)
+Web_Simulacion/
+
+# Borradores escritura (no parte del repo educacional)
+Escritura/
+
+# Doc producto interno (no parte del repo educacional)
+PRODUCT.md
+
 # IDE
 .vscode/
 .idea/
 
 # Base de datos (grande, no subir)
 Tratamiento_Datos/BD*/
+
+# Checkpoints intermedios (solo best_model se versiona)
+**/mejores_pesos/
